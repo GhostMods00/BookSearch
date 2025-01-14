@@ -10,54 +10,58 @@ import { verifyToken } from './utils/auth.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const app = express();
-const PORT = process.env.PORT || 3001;
+async function startServer() {
+  try {
+    console.log('🚀 Starting server initialization...');
 
-// Create Apollo Server
-console.log('Creating Apollo Server...');
-const server = new ApolloServer({
-  typeDefs,
-  resolvers,
-});
+    const app = express();
+    const PORT = process.env.PORT || 3001;
 
-// Start Apollo Server
-await server.start();
-console.log('🚀 Apollo Server started successfully');
+    console.log('📦 Creating Apollo Server...');
+    const server = new ApolloServer({
+      typeDefs,
+      resolvers,
+    });
 
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+    console.log('🌟 Starting Apollo Server...');
+    await server.start();
+    console.log('✨ Apollo Server started successfully');
 
-// Set up Apollo middleware
-app.use('/graphql', expressMiddleware(server, {
-  context: async ({ req }) => {
-    // Get the user token from the headers
-    const token = req.headers.authorization || '';
-    // Try to retrieve a user with the token
-    const user = await verifyToken(token);
-    // Add the user to the context
-    return { user };
-  },
-}));
+    app.use(express.urlencoded({ extended: true }));
+    app.use(express.json());
 
-// if we're in production, serve client/build as static assets
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../../client/build')));
+    console.log('🔗 Setting up Apollo middleware...');
+    app.use(
+      '/graphql',
+      expressMiddleware(server, {
+        context: async ({ req }) => {
+          const token = req.headers.authorization || '';
+          const user = await verifyToken(token);
+          return { user };
+        },
+      })
+    );
 
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../../client/build/index.html'));
-  });
+    if (process.env.NODE_ENV === 'production') {
+      app.use(express.static(path.join(__dirname, '../../client/build')));
+      app.get('*', (_, res) => {
+        res.sendFile(path.join(__dirname, '../../client/build/index.html'));
+      });
+    }
+
+    console.log('📡 Waiting for database connection...');
+    
+    db.once('open', () => {
+      app.listen(PORT, () => {
+        console.log('✅ Database connected successfully');
+        console.log(`🚀 Server running at http://localhost:${PORT}`);
+        console.log(`🎯 GraphQL available at http://localhost:${PORT}/graphql`);
+      });
+    });
+
+  } catch (error) {
+    console.error('❌ Server initialization error:', error);
+  }
 }
 
-console.log('Waiting for database connection...');
-db.once('open', () => {
-  app.listen(PORT, () => {
-    console.log(`🌟 Database connected successfully`);
-    console.log(`🚀 API server running on http://localhost:${PORT}`);
-    console.log(`📫 Use GraphQL at http://localhost:${PORT}/graphql`);
-  });
-});
-
-// Add error handling for database connection
-db.on('error', (err) => {
-  console.error('MongoDB connection error:', err);
-});
+startServer().catch(console.error);
