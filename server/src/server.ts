@@ -34,8 +34,8 @@ async function startServer() {
     app.use(
       '/graphql',
       expressMiddleware(server, {
-        context: async ({ req }) => {
-          const token = req.headers.authorization || '';
+        context: async ({ req: { headers } }) => {
+          const token = headers.authorization || '';
           const user = await verifyToken(token);
           return { user };
         },
@@ -49,19 +49,32 @@ async function startServer() {
       });
     }
 
-    console.log('📡 Waiting for database connection...');
+    // Start Express server immediately instead of waiting
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running at http://localhost:${PORT}`);
+      console.log(`🎯 GraphQL available at http://localhost:${PORT}/graphql`);
+    });
+
+    // MongoDB connection is independent of server startup
+    console.log('📡 Setting up database connection...');
     
     db.once('open', () => {
-      app.listen(PORT, () => {
-        console.log('✅ Database connected successfully');
-        console.log(`🚀 Server running at http://localhost:${PORT}`);
-        console.log(`🎯 GraphQL available at http://localhost:${PORT}/graphql`);
-      });
+      console.log('✅ Database connected successfully');
+    });
+
+    db.on('error', (err) => {
+      console.error('MongoDB connection error:', err);
     });
 
   } catch (error) {
     console.error('❌ Server initialization error:', error);
+    process.exit(1);
   }
 }
 
-startServer().catch(console.error);
+// Initialize server
+console.log('0. Beginning server startup...');
+startServer().catch(error => {
+  console.error('Failed to start server:', error);
+  process.exit(1);
+});
