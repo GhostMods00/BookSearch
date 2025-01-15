@@ -12,25 +12,21 @@ const __dirname = path.dirname(__filename);
 
 async function startServer() {
   try {
-    console.log('🚀 Starting server initialization...');
-
     const app = express();
     const PORT = process.env.PORT || 3001;
 
-    console.log('📦 Creating Apollo Server...');
     const server = new ApolloServer({
       typeDefs,
       resolvers,
     });
 
-    console.log('🌟 Starting Apollo Server...');
+    // Start Apollo Server
     await server.start();
-    console.log('✨ Apollo Server started successfully');
 
     app.use(express.urlencoded({ extended: true }));
     app.use(express.json());
 
-    console.log('🔗 Setting up Apollo middleware...');
+    // Set up Apollo middleware
     app.use(
       '/graphql',
       expressMiddleware(server, {
@@ -42,39 +38,27 @@ async function startServer() {
       })
     );
 
+    // Serve static assets and handle client-side routing in production
     if (process.env.NODE_ENV === 'production') {
-      app.use(express.static(path.join(__dirname, '../../client/build')));
+      app.use(express.static(path.join(__dirname, '../../client/dist')));
+
       app.get('*', (_, res) => {
-        res.sendFile(path.join(__dirname, '../../client/build/index.html'));
+        res.sendFile(path.join(__dirname, '../../client/dist/index.html'));
       });
     }
 
-    // Start Express server immediately instead of waiting
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running at http://localhost:${PORT}`);
-      console.log(`🎯 GraphQL available at http://localhost:${PORT}/graphql`);
-    });
-
-    // MongoDB connection is independent of server startup
-    console.log('📡 Setting up database connection...');
-    
+    // Start server
     db.once('open', () => {
-      console.log('✅ Database connected successfully');
-    });
-
-    db.on('error', (err) => {
-      console.error('MongoDB connection error:', err);
+      app.listen(PORT, () => {
+        console.log(`🚀 Server running on port ${PORT}`);
+        console.log(`🚀 GraphQL ready at http://localhost:${PORT}/graphql`);
+      });
     });
 
   } catch (error) {
-    console.error('❌ Server initialization error:', error);
+    console.error('Server initialization error:', error);
     process.exit(1);
   }
 }
 
-// Initialize server
-console.log('0. Beginning server startup...');
-startServer().catch(error => {
-  console.error('Failed to start server:', error);
-  process.exit(1);
-});
+startServer();
