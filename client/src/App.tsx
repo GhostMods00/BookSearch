@@ -4,16 +4,16 @@ import { ApolloClient, InMemoryCache, ApolloProvider, createHttpLink } from '@ap
 import { setContext } from '@apollo/client/link/context';
 import Navbar from './components/Navbar';
 
-// Create main GraphQL API endpoint link
+// Create GraphQL API endpoint link
 const httpLink = createHttpLink({
-  uri: '/graphql',
+  uri: '/graphql',  // This will be proxied to http://localhost:3001/graphql
 });
 
-// Create middleware for auth token
+// Construct request middleware that will attach the JWT token to every request as an `authorization` header
 const authLink = setContext((_, { headers }) => {
-  // Get token from local storage
+  // get the authentication token from local storage if it exists
   const token = localStorage.getItem('id_token');
-  // Return headers to context
+  // return the headers to the context so httpLink can read them
   return {
     headers: {
       ...headers,
