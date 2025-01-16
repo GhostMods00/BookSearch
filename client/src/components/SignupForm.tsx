@@ -3,11 +3,22 @@ import { Form, Button, Alert } from 'react-bootstrap';
 import { useMutation } from '@apollo/client';
 import { ADD_USER } from '../utils/mutations';
 import Auth from '../utils/auth';
-import type { User } from '../models/User';
 import type { ChangeEvent, FormEvent } from 'react';
 
+interface UserFormData {
+  username: string;
+  email: string;
+  password: string;
+  savedBooks: any[];
+}
+
 const SignupForm = ({ handleModalClose }: { handleModalClose: () => void }) => {
-  const [userFormData, setUserFormData] = useState<User>({ username: '', email: '', password: '', savedBooks: [] });
+  const [userFormData, setUserFormData] = useState<UserFormData>({
+    username: '',
+    email: '',
+    password: '',
+    savedBooks: []
+  });
   const [validated] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
 
@@ -65,7 +76,8 @@ const SignupForm = ({ handleModalClose }: { handleModalClose: () => void }) => {
             placeholder='Your username'
             name='username'
             onChange={handleInputChange}
-            value={userFormData.username}
+            value={userFormData.username || ''}
+            data-testid="username-input"
             required
           />
           <Form.Control.Feedback type='invalid'>Username is required!</Form.Control.Feedback>
@@ -78,7 +90,8 @@ const SignupForm = ({ handleModalClose }: { handleModalClose: () => void }) => {
             placeholder='Your email address'
             name='email'
             onChange={handleInputChange}
-            value={userFormData.email}
+            value={userFormData.email || ''}
+            data-testid="email-input"
             required
           />
           <Form.Control.Feedback type='invalid'>Email is required!</Form.Control.Feedback>
@@ -91,7 +104,8 @@ const SignupForm = ({ handleModalClose }: { handleModalClose: () => void }) => {
             placeholder='Your password'
             name='password'
             onChange={handleInputChange}
-            value={userFormData.password}
+            value={userFormData.password || ''}
+            data-testid="password-input"
             required
           />
           <Form.Control.Feedback type='invalid'>Password is required!</Form.Control.Feedback>
